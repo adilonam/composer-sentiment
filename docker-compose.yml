@@ -2,19 +2,29 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
-    container_name: keycloak-postgres
+    image: postgres:15-alpine
+    container_name: postgres-db
     environment:
-      POSTGRES_DB: keycloak
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/ssl/postgres.crt:/etc/ssl/certs/server.crt:ro
+      - ./postgres/ssl/postgres.key:/etc/ssl/private/server.key:ro
+    command: >
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/etc/ssl/certs/server.crt
+      -c ssl_key_file=/etc/ssl/private/server.key
+      -c ssl_min_protocol_version=TLSv1.2
+    ports:
+      - "5432:5432"
     networks:
-      - keycloak-network
+      - composer-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -23,33 +33,21 @@ services:
     image: quay.io/keycloak/keycloak:23.0
     container_name: keycloak
     environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak_password
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8443
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_LOG_LEVEL: info
-      KC_METRICS_ENABLED: true
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_PROXY: edge
-    command: start
-    depends_on:
-      postgres:
-        condition: service_healthy
+    command: start-dev
+    volumes:
+      - keycloak_data:/opt/keycloak/data
     networks:
-      - keycloak-network
+      - composer-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 3
 
   nginx:
     image: nginx:alpine
@@ -64,12 +62,13 @@ services:
       keycloak:
         condition: service_healthy
     networks:
-      - keycloak-network
+      - composer-network
     restart: unless-stopped
+
+networks:
+  composer-network:
+    driver: bridge
 
 volumes:
   postgres_data:
-
-networks:
-  keycloak-network:
-    driver: bridge
+  keycloak_data:
