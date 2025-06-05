@@ -32,8 +32,8 @@ echo "   ✓ PostgreSQL certificate: ${POSTGRES_SSL_DIR}/postgres.crt"
 echo "   ✓ PostgreSQL private key: ${POSTGRES_SSL_DIR}/postgres.key"
 
 # Set proper permissions for Keycloak
-chmod 600 ${KEYCLOAK_SSL_DIR}/*.key
-chmod 644 ${KEYCLOAK_SSL_DIR}/*.crt
+sudo chmod 600 ${KEYCLOAK_SSL_DIR}/*.key
+sudo chmod 644 ${KEYCLOAK_SSL_DIR}/*.crt
 
 # PostgreSQL requires specific ownership and permissions
 # PostgreSQL runs as user ID 999 in the container, so we need to make files readable by that user
