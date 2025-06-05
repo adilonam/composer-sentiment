@@ -39,8 +39,9 @@ chmod 644 ${KEYCLOAK_SSL_DIR}/*.crt
 # PostgreSQL runs as user ID 999 in the container, so we need to make files readable by that user
 # Set permissions so that PostgreSQL can read the files (must be 0600 for user ownership or 0640 for root ownership)
 # PostgreSQL key files need u=rw,g=r (0640) permissions when owned by root
-chmod 600 ${POSTGRES_SSL_DIR}/*.key
-chmod 644 ${POSTGRES_SSL_DIR}/*.crt
+sudo chown 0:70 ${POSTGRES_SSL_DIR}/*.key ${POSTGRES_SSL_DIR}/*.crt
+sudo chmod 640 ${POSTGRES_SSL_DIR}/*.key
+sudo chmod 644 ${POSTGRES_SSL_DIR}/*.crt
 
 echo ""
 echo "🎉 SSL certificates generated successfully!"
