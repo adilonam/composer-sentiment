@@ -5,10 +5,12 @@
 
 KEYCLOAK_SSL_DIR="./keycloak/ssl"
 POSTGRES_SSL_DIR="./postgres/ssl"
+NGINX_SSL_DIR="./nginx/ssl"
 
 # Create SSL directories if they don't exist
 mkdir -p ${KEYCLOAK_SSL_DIR}
 mkdir -p ${POSTGRES_SSL_DIR}
+mkdir -p ${NGINX_SSL_DIR}
 
 echo "Generating self-signed SSL certificates for development..."
 
@@ -31,9 +33,22 @@ rm ${POSTGRES_SSL_DIR}/postgres.csr
 echo "   ✓ PostgreSQL certificate: ${POSTGRES_SSL_DIR}/postgres.crt"
 echo "   ✓ PostgreSQL private key: ${POSTGRES_SSL_DIR}/postgres.key"
 
+# Generate Nginx SSL certificates
+echo "3. Generating Nginx SSL certificates..."
+openssl genrsa -out ${NGINX_SSL_DIR}/nginx.key 2048
+openssl req -new -key ${NGINX_SSL_DIR}/nginx.key -out ${NGINX_SSL_DIR}/nginx.csr -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+openssl x509 -req -in ${NGINX_SSL_DIR}/nginx.csr -signkey ${NGINX_SSL_DIR}/nginx.key -out ${NGINX_SSL_DIR}/nginx.crt -days 365
+rm ${NGINX_SSL_DIR}/nginx.csr
+echo "   ✓ Nginx certificate: ${NGINX_SSL_DIR}/nginx.crt"
+echo "   ✓ Nginx private key: ${NGINX_SSL_DIR}/nginx.key"
+
 # Set proper permissions for Keycloak
 sudo chmod 600 ${KEYCLOAK_SSL_DIR}/*.key
 sudo chmod 644 ${KEYCLOAK_SSL_DIR}/*.crt
+
+# Set proper permissions for Nginx
+sudo chmod 600 ${NGINX_SSL_DIR}/*.key
+sudo chmod 644 ${NGINX_SSL_DIR}/*.crt
 
 # PostgreSQL requires specific ownership and permissions
 # PostgreSQL runs as user ID 999 in the container, so we need to make files readable by that user
@@ -49,12 +64,15 @@ echo ""
 echo "📋 Summary:"
 echo "   Keycloak HTTPS: ${KEYCLOAK_SSL_DIR}/keycloak.crt + ${KEYCLOAK_SSL_DIR}/keycloak.key"
 echo "   PostgreSQL SSL: ${POSTGRES_SSL_DIR}/postgres.crt + ${POSTGRES_SSL_DIR}/postgres.key"
+echo "   Nginx HTTPS: ${NGINX_SSL_DIR}/nginx.crt + ${NGINX_SSL_DIR}/nginx.key"
 echo ""
 echo "⚠️  Note: These are self-signed certificates for development only."
 echo "   For production, use proper SSL certificates from a trusted CA."
 echo ""
 echo "🔐 PostgreSQL SSL files have been set with 640 permissions for container access."
 echo ""
-echo "🚀 To access Keycloak:"
-echo "   HTTP:  http://localhost:8080"
-echo "   HTTPS: https://localhost:8443"
+echo "🚀 Services access:"
+echo "   Nginx (main entry point): https://localhost:443"
+echo "   FastAPI via Nginx: https://localhost/api/"
+echo "   Keycloak via Nginx: https://localhost/auth/"
+echo "   Direct Keycloak access: https://localhost:8443"

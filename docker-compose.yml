@@ -46,10 +46,37 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/ssl/keycloak.crt:/etc/ssl/certs/keycloak.crt:ro
       - ./keycloak/ssl/keycloak.key:/etc/ssl/private/keycloak.key:ro
-
     networks:
       - composer-network
     restart: unless-stopped
+
+  fastapi:
+    image: adilmm/scrape-comments:latest
+    container_name: fastapi-scraper
+    networks:
+      - composer-network
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl/nginx.crt:/etc/ssl/certs/nginx.crt:ro
+      - ./nginx/ssl/nginx.key:/etc/ssl/private/nginx.key:ro
+    networks:
+      - composer-network
+    restart: unless-stopped
+    depends_on:
+      - fastapi
+      - keycloak
 
 networks:
   composer-network:
