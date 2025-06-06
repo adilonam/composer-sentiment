@@ -9,14 +9,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/ssl/postgres.crt:/etc/ssl/certs/postgres.crt:ro
-      - ./postgres/ssl/postgres.key:/etc/ssl/private/postgres.key:ro
-    command: >
-      postgres
-      -c ssl=on
-      -c ssl_cert_file=/etc/ssl/certs/postgres.crt
-      -c ssl_key_file=/etc/ssl/private/postgres.key
-      -c ssl_min_protocol_version=TLSv1.2
     ports:
       - "5432:5432"
     networks:
@@ -28,24 +20,13 @@ services:
     image: quay.io/keycloak/keycloak:23.0
     container_name: keycloak
     environment:
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: true
-      KC_HTTP_ENABLED: false
-      KC_HTTPS_ENABLED: true
-      KC_HTTPS_PORT: 8443
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HTTPS_CERTIFICATE_FILE: /etc/ssl/certs/keycloak.crt
-      KC_HTTPS_CERTIFICATE_KEY_FILE: /etc/ssl/private/keycloak.key
-      KC_HEALTH_ENABLED: true
-      KC_METRICS_ENABLED: true
-    command: start --optimized
+    command: start-dev
     ports:
-      - "8443:8443"
+      - "5050:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak/ssl/keycloak.crt:/etc/ssl/certs/keycloak.crt:ro
-      - ./keycloak/ssl/keycloak.key:/etc/ssl/private/keycloak.key:ro
     networks:
       - composer-network
     restart: unless-stopped
@@ -60,23 +41,6 @@ services:
       - "8000:8000"
     depends_on:
       - postgres
-
-  nginx:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl/nginx.crt:/etc/ssl/certs/nginx.crt:ro
-      - ./nginx/ssl/nginx.key:/etc/ssl/private/nginx.key:ro
-    networks:
-      - composer-network
-    restart: unless-stopped
-    depends_on:
-      - fastapi
-      - keycloak
 
 networks:
   composer-network:
