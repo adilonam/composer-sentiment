@@ -31,16 +31,7 @@ services:
       - composer-network
     restart: unless-stopped
 
-  fastapi:
-    image: adilmm/scrape-comments:latest
-    container_name: fastapi-scraper
-    networks:
-      - composer-network
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
+
 
 networks:
   composer-network:
