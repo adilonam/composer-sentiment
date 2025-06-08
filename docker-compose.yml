@@ -34,6 +34,18 @@ services:
       - composer-network
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - composer-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
 
 
 networks:
@@ -43,3 +55,4 @@ networks:
 volumes:
   postgres_data:
   keycloak_data:
+  redis_data:
